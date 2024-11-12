@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en">
+<head><title>Visualização de Dados</title></head>
+<body>
+  <h2>Primeiras Linhas do Dataset</h2>
+  {{ data|safe }}
+  <h2>Distribuição de Preços</h2>
+  <img src="/static/plot.png" alt="Gráfico de Preço Médio">
+  <a href="{{ url_for('train_model', filename=filename) }}">Treinar Modelo</a>
+</body>
+</html>

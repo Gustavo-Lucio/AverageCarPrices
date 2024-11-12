@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head><title>Treinamento do Modelo</title></head>
+<body>
+  <h2>Treinar Modelo</h2>
+  {% if score %}
+    <p>Score do Modelo: {{ score }}</p>
+  {% else %}
+    <form action="" method="post">
+      <label for="target">Escolha a Variável Alvo:</label>
+      <select name="target" required>
+        {% for col in columns %}
+          <option value="{{ col }}">{{ col }}</option>
+        {% endfor %}
+      </select>
+      <br>
+      <label for="features">Escolha as Variáveis de Entrada:</label><br>
+      {% for col in columns %}
+        <input type="checkbox" name="features" value="{{ col }}">{{ col }}<br>
+      {% endfor %}
+      <br>
+      <label for="model">Modelo:</label>
+      <select name="model">
+        <option value="linear_regression">Regressão Linear</option>
+        <option value="random_forest">Random Forest</option>
+      </select>
+      <button type="submit">Treinar</button>
+    </form>
+  {% endif %}
+</body>
+</html>

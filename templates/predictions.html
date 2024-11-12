@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head><title>Previsão</title></head>
+<body>
+  <h2>Fazer uma Previsão</h2>
+  <form action="" method="post">
+    {% for i in range(0, 5) %}  <!-- Ajustar para número de features -->
+      <label for="feature_{{ i }}">Feature {{ i }}:</label>
+      <input type="number" step="any" name="feature_{{ i }}">
+    {% endfor %}
+    <button type="submit">Prever</button>
+  </form>
+  {% if prediction %}
+    <p>Resultado da Previsão: {{ prediction }}</p>
+  {% endif %}
+</body>
+</html>

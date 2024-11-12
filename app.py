@@ -149,60 +149,119 @@
 # Data de Entrega: Aulas da semana do dia 25/11 a 29/11
 
 
+# exemplo de csv
+# year_of_reference,month_of_reference,fipe_code,authentication,brand,model,fuel,gear,engine_size,year_model,avg_price_brl,age_years
+# 2022,January,038001-6,vwmrywl5qs,Acura,NSX 3.0,Gasoline,manual,3.0,1995,43779.0,28
+# 2022,January,038001-6,t9mt723qhz,Acura,NSX 3.0,Gasoline,manual,3.0,1994,42244.0,29
+# 2022,January,038001-6,rtm9gj7zk8,Acura,NSX 3.0,Gasoline,manual,3.0,1991,35678.0,32
+# 2022,January,038002-4,nlf2w6k7vd,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1998,27132.0,25
+# 2022,January,038002-4,mcyp7ypwtc,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1997,23934.0,26
+# 2022,January,038002-4,lxckds9y6h,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1996,22690.0,27
 
 
 
-from flask import Flask, render_template, request, redirect, url_for, send_from_directory
+
+from flask import Flask, render_template, request, redirect, url_for
 import os
 import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.ensemble import RandomForestRegressor
+import joblib
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'csv'}
 
-# Função para verificar extensão do arquivo
+# Função para verificar se a extensão é permitida
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-# Rota para exibir o formulário de upload
+# Rota para página inicial e upload do CSV
 @app.route("/", methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        # Verificar se há um arquivo
-        if 'file' not in request.files:
-            return redirect(request.url)
-        
-        file = request.files['file']
-        
-        # Verificar se o arquivo é permitido
+        file = request.files.get('file')
         if file and allowed_file(file.filename):
-            filename = file.filename
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)
-            
-            # Ler o CSV com pandas
-            df = pd.read_csv(filepath)
-            columns = df.columns.tolist()  # Obter lista de colunas
-            
-            # Redirecionar para a página de filtro, passando as colunas
-            return render_template('filter.html', columns=columns, filename=filename)
-    
-    return render_template('index.html')
+            return redirect(url_for('visualize_data', filename=file.filename))
+    return render_template("index.html")
 
-# Rota para exibir as colunas e permitir filtragem
-@app.route("/filter", methods=['POST'])
-def filter_data():
-    filename = request.form.get('filename')
-    selected_columns = request.form.getlist('columns')
+# Rota para visualização dos dados e análises
+@app.route("/visualize/<filename>")
+def visualize_data(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    
-    # Ler o CSV com pandas e filtrar as colunas selecionadas
     df = pd.read_csv(filepath)
-    filtered_df = df[selected_columns]
+    df_html = df.head().to_html(classes='table table-striped')
+    return render_template("visualize.html", data=df_html, filename=filename)
+
+# Rota para exibir gráficos
+@app.route("/plot/<filename>")
+def plot_data(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
     
-    # Exibir os dados filtrados como HTML
-    return render_template('filtered_data.html', tables=[filtered_df.to_html(classes='data', header="true")])
+    # Gerar gráfico de exemplo
+    plt.figure(figsize=(10, 6))
+    sns.histplot(df['avg_price_brl'], bins=30, kde=True)
+    plt.title("Distribuição de Preços Médios de Carros")
+    plt.xlabel("Preço Médio (BRL)")
+    plt.ylabel("Frequência")
+    plot_path = os.path.join("static", "plot.png")
+    plt.savefig(plot_path)
+    return render_template("visualize.html", plot_path=plot_path, filename=filename)
+
+# Rota para configurar e treinar o modelo
+@app.route("/train/<filename>", methods=['GET', 'POST'])
+def train_model(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
+    
+    if request.method == 'POST':
+        target = request.form['target']
+        features = request.form.getlist('features')
+        
+        X = df[features]
+        y = df[target]
+        
+        # Dividir dados
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+        
+        # Escolha de modelo
+        model_choice = request.form['model']
+        if model_choice == 'linear_regression':
+            model = LinearRegression()
+        elif model_choice == 'random_forest':
+            model = RandomForestRegressor()
+        
+        model.fit(X_train, y_train)
+        score = model.score(X_test, y_test)
+        
+        # Salvar o modelo
+        model_path = os.path.join("models", f"{model_choice}.joblib")
+        joblib.dump(model, model_path)
+        
+        return render_template("train_model.html", score=score, filename=filename)
+    
+    return render_template("train_model.html", columns=df.columns, filename=filename)
+
+# Rota para fazer predições
+@app.route("/predict/<filename>", methods=['GET', 'POST'])
+def make_prediction(filename):
+    model_path = os.path.join("models", "random_forest.joblib")  # exemplo de modelo carregado
+    model = joblib.load(model_path)
+    prediction = None
+
+    if request.method == 'POST':
+        features = [float(request.form.get(f'feature_{i}')) for i in range(len(request.form))]
+        prediction = model.predict([features])[0]
+    
+    return render_template("predictions.html", prediction=prediction, filename=filename)
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs('models', exist_ok=True)
     app.run(debug=True)
