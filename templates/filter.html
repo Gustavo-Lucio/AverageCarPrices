@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Filtrar Colunas</title>
+</head>
+<body>
+  <h2>Selecione as colunas que deseja filtrar</h2>
+  <form action="/filter" method="post">
+      <input type="hidden" name="filename" value="{{ filename }}">
+      {% for col in columns %}
+          <input type="checkbox" name="columns" value="{{ col }}"> {{ col }}<br>
+      {% endfor %}
+      <button type="submit">Filtrar</button>
+  </form>
+</body>
+</html>
