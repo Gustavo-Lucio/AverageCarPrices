@@ -159,6 +159,12 @@
 # 2022,January,038002-4,lxckds9y6h,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1996,22690.0,27
 
 
+# pip install scikit-learn
+# pip install sklearn
+# pip install seaborn
+# pip install pandas
+# pip install matplotlib
+# pip install joblib
 
 
 from flask import Flask, render_template, request, redirect, url_for
