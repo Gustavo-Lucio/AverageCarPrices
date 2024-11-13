@@ -1,172 +1,3 @@
-# Trabalho Final
-# Valor (5.0)
-
-
-
-# Aplicação Web com Análise de Dados e Machine Learning
-
-# Desenvolver uma aplicação web utilizando Python, que
-# permita ao usuário fazer o upload de arquivos de dados no
-# formato .csv e realizar análises visuais e predições com
-# machine learning. O objetivo é oferecer insights interativos e
-# predições personalizadas, com base em variáveis presentes
-# nos dados, possibilitando diferentes tipos de visualizações e
-# uso de classificadores configuráveis pelo usuário.
-
-
-
-# TEMA
-# O tema do conjunto de dados e os objetivos de análise com recursos de aprendizado de
-# máquina ficarão a encargo da equipe e devem ser apresentados ao professor antes de
-# iniciar as atividades de desenvolvimento, para evitar temas duplicados na turma.
-# Então, lembre-se de dizer seu tema durante a aula ou, caso não consiga estar em sala,
-# via mensagem no blackboard. Assim, caso haja temas iguais a ordem de horário será
-# respeitada com prioridade aos grupos que estavam em sala.
-
-
-
-# Funcionalidades
-# 1. Upload e Flexibilidade dos Dados
-# 2. Análise de Dados e Visualização
-# 3. Machine Learning com Personalização de Modelos
-# 4. Treinamento Dinâmico do Modelo
-
-
-
-# Upload e Flexibilidade dos Dados
-# ● A aplicação deverá permitir o upload de um arquivo .csv, que contenha dados
-# estruturados em colunas consistentes. A aplicação deve ser capaz de gerar gráficos e
-# análises automaticamente, considerando que o usuário poderá enviar diferentes bases
-# com as mesmas colunas. A flexibilidade dos dados é essencial para permitir a análise de
-# dados variados, como de imóveis de cidades diferentes, jogos novos, ou atualização de
-# dados cursos online.
-
-
-
-# Análise de Dados e Visualização
-# A aplicação deve gerar gráficos de análise com as variáveis do dataset, usando tanto gráficos
-# básicos (como gráficos de barras e pizza) quanto gráficos mais avançados e interativos, como
-# mapas para visualização de dados geográficos. Por exemplo:
-# ● Imóveis: Visualizar a distribuição de preços por bairro, a localização dos imóveis no
-# mapa, e a relação entre o preço e características como tamanho, número de quartos e
-# ano de construção.
-# ● Jogos: Analisar popularidade por país, tipos de jogos mais jogados por região,
-# distribuição de avaliações por gênero e gênero predominante em cada país.
-# ● Cursos Online: Visualizar a popularidade por temas de cursos em cada país, preços
-# médios por idioma e país, e a distribuição de alunos por área de estudo ou tipo de
-# curso.
-
-
-
-# Machine Learning
-# A aplicação deve permitir ao usuário realizar predições com base em atributos relevantes,
-# como por exemplo: estimar o preço de uma nova casa com base em combinações como
-# bairro, metragem (m²), número de quartos, ano de construção, número de banheiros e
-# proximidade de serviços essenciais (escolas, transporte público). Outros exemplos no
-# próximo slide.
-# ● Escolha e Configuração de Classificadores: O usuário deverá poder escolher entre
-# diferentes classificadores/preditores e ajustar seus parâmetros (como profundidade
-# em árvores de decisão ou número de vizinhos em KNN). Essa funcionalidade permite
-# que o usuário teste múltiplos modelos e visualize como diferentes configurações
-# influenciam as previsões.
-
-
-
-# Exemplos
-# ● Jogos: Prever a probabilidade de sucesso de um jogo considerando atributos como
-# preço, nicho, gênero, número de jogadores simultâneos, faixa etária do público, e
-# presença de recursos multiplayer. Também é possível estimar o preço ideal para um
-# jogo com base em avaliações, gênero, nicho e média de avaliações dos jogos no mesmo
-# gênero.
-# ● Cursos Online: Prever o preço ideal de um curso com base em país, idioma, tema,
-# duração do curso, e nível de dificuldade. Outra predição pode envolver estimar o
-# número de alunos que o curso atrairá com base em variáveis como tipo de curso,
-# linguagem, nível de engajamento esperado, e popularidade do tema em determinada
-# região.
-
-
-
-# Treinamento Dinâmico do Modelo
-# ● Como a base de dados pode ser alterada com frequência, a aplicação deve incluir
-# uma funcionalidade para re-treinar o modelo sempre que novos dados forem
-# inseridos. Essa opção deve estar disponível para permitir ao usuário treinar o
-# modelo conforme necessário para garantir predições atualizadas.
-# Exemplo: cidades diferentes.
-
-
-
-# Critérios de Avaliação
-# 1. Qualidade Técnica da Implementação (0,5 ponto)
-# 2. Análise de Dados (1,25 pontos)
-# 3. Machine Learning (1,25 pontos)
-# 4. Documentação (0,5 ponto)
-# 5. Apresentação Final / Defesa de Código (1,5 ponto)
-
-
-
-# Critérios de Avaliação
-# Qualidade Técnica da Implementação (0,5 ponto)
-# ● Uso de Ferramentas: Implementação correta de bibliotecas (ex.: pandas, matplotlib/seaborn, scikit-learn).
-# ● Código Limpo: O código é legível, bem comentado e segue boas práticas de programação.
-# ● Estrutura do Projeto: Organização lógica e modular do código e dos arquivos.
-# ● Divisão de Tarefas: As responsabilidades foram claramente distribuídas entre os membros da equipe.
-# Análise de Dados (1,25 pontos)
-# ● Manipulação de Dados: Uso adequado do pandas para manipulação e limpeza dos dados.
-# ● Visualização: Criação de gráficos informativos e bem apresentados, utilizando matplotlib, seaborn, ou
-# gráficos interativos para melhorar a experiência do usuário.
-
-
-
-# Critérios de Avaliação
-# Machine Learning (1,25 pontos)
-# ● Modelagem e Predição: Aplicação de técnicas de machine learning com scikit-learn, incluindo a seleção
-# de modelos adequados ao problema.
-# ● Configuração de Modelos: Implementação de opções de escolha de modelos e ajuste de parâmetros.
-# ● Treinamento Dinâmico: Funcionalidade para re-treinar o modelo com novos dados.
-# Documentação (0,5 ponto)
-# ● README e Documentação: Disponibilização de um README detalhado e documentação explicativa para
-# facilitar a compreensão e uso do código.
-
-
-
-# Critérios de Avaliação
-# Defesa de Código (1,5 ponto)
-# ● Explicação Individual: Cada aluno deverá apresentar partes específicas do código, explicando sua
-# funcionalidade, escolhas de implementação, e mostrando seu entendimento.
-# ● Demonstração Prática: Demonstração prática das principais funcionalidades da aplicação durante a
-# apresentação.
-# ● Respostas a Perguntas: Cada membro deve estar preparado para responder perguntas técnicas sobre o
-# código e as decisões tomadas no projeto.
-
-
-
-# Como entregar?
-# Criar uma conta e um repositório no GitHub.
-# Este repositório deve conter todo os arquivos necessários para rodar o projeto.
-# Enviar link do repositório na entrega do Blackboard. E mesmo com a entrega do blackboard se
-# encerrando dia delimitado, não podem conter commits realizados após a data de entrega.
-# Tamanho do grupo: 3 pessoas.
-# Data de Entrega: Aulas da semana do dia 25/11 a 29/11
-
-
-# exemplo de csv
-# year_of_reference,month_of_reference,fipe_code,authentication,brand,model,fuel,gear,engine_size,year_model,avg_price_brl,age_years
-# 2022,January,038001-6,vwmrywl5qs,Acura,NSX 3.0,Gasoline,manual,3.0,1995,43779.0,28
-# 2022,January,038001-6,t9mt723qhz,Acura,NSX 3.0,Gasoline,manual,3.0,1994,42244.0,29
-# 2022,January,038001-6,rtm9gj7zk8,Acura,NSX 3.0,Gasoline,manual,3.0,1991,35678.0,32
-# 2022,January,038002-4,nlf2w6k7vd,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1998,27132.0,25
-# 2022,January,038002-4,mcyp7ypwtc,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1997,23934.0,26
-# 2022,January,038002-4,lxckds9y6h,Acura,Legend 3.2/3.5,Gasoline,manual,3.2,1996,22690.0,27
-
-
-# pip install scikit-learn
-# pip install sklearn
-# pip install seaborn
-# pip install pandas
-# pip install matplotlib
-# pip install joblib
-
-
 from flask import Flask, render_template, request, redirect, url_for
 import os
 import pandas as pd
@@ -175,6 +6,7 @@ import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.preprocessing import LabelEncoder
 import joblib
 
 app = Flask(__name__)
@@ -184,6 +16,15 @@ app.config['ALLOWED_EXTENSIONS'] = {'csv'}
 # Função para verificar se a extensão é permitida
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
+
+# Função para aplicar Label Encoding
+def apply_label_encoding(df):
+    label_encoders = {}
+    for col in df.select_dtypes(include=['object']).columns:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col])
+        label_encoders[col] = le  # Salve o LabelEncoder para futuras inversões ou predições
+    return df, label_encoders
 
 # Rota para página inicial e upload do CSV
 @app.route("/", methods=['GET', 'POST'])
@@ -201,8 +42,21 @@ def upload_file():
 def visualize_data(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     df = pd.read_csv(filepath)
+    
+    # Transformação das variáveis categóricas para numéricas (Label Encoding)
+    df, label_encoders = apply_label_encoding(df)
+    
+    # Gráfico de distribuição
+    plt.figure(figsize=(10, 6))
+    sns.histplot(df['avg_price_brl'], bins=30, kde=True)
+    plt.title("Distribuição de Preços Médios de Carros")
+    plt.xlabel("Preço Médio (BRL)")
+    plt.ylabel("Frequência")
+    plot_path = os.path.join("static", "plot.png")
+    plt.savefig(plot_path)
+
     df_html = df.head().to_html(classes='table table-striped')
-    return render_template("visualize.html", data=df_html, filename=filename)
+    return render_template("visualize.html", data=df_html, filename=filename, plot_path=plot_path)
 
 # Rota para exibir gráficos
 @app.route("/plot/<filename>")
@@ -210,7 +64,10 @@ def plot_data(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     df = pd.read_csv(filepath)
     
-    # Gerar gráfico de exemplo
+    # Transformação das variáveis categóricas para numéricas (Label Encoding)
+    df, label_encoders = apply_label_encoding(df)
+    
+    # Gráfico de distribuição
     plt.figure(figsize=(10, 6))
     sns.histplot(df['avg_price_brl'], bins=30, kde=True)
     plt.title("Distribuição de Preços Médios de Carros")
@@ -225,6 +82,9 @@ def plot_data(filename):
 def train_model(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     df = pd.read_csv(filepath)
+    
+    # Transformação das variáveis categóricas para numéricas (Label Encoding)
+    df, label_encoders = apply_label_encoding(df)
     
     if request.method == 'POST':
         target = request.form['target']
@@ -246,11 +106,24 @@ def train_model(filename):
         model.fit(X_train, y_train)
         score = model.score(X_test, y_test)
         
+        # Gráfico de performance do modelo
+        y_pred = model.predict(X_test)
+        
+        # Gráfico de dispersão: valores reais vs predições
+        plt.figure(figsize=(10, 6))
+        plt.scatter(y_test, y_pred, alpha=0.7)
+        plt.title("Valores Reais vs. Previsões")
+        plt.xlabel("Valor Real")
+        plt.ylabel("Previsão")
+        plt.grid(True)
+        performance_plot_path = os.path.join("static", "performance_plot.png")
+        plt.savefig(performance_plot_path)
+
         # Salvar o modelo
         model_path = os.path.join("models", f"{model_choice}.joblib")
         joblib.dump(model, model_path)
         
-        return render_template("train_model.html", score=score, filename=filename)
+        return render_template("train_model.html", score=score, filename=filename, performance_plot_path=performance_plot_path)
     
     return render_template("train_model.html", columns=df.columns, filename=filename)
 
@@ -262,10 +135,25 @@ def make_prediction(filename):
     prediction = None
 
     if request.method == 'POST':
-        features = [float(request.form.get(f'feature_{i}')) for i in range(len(request.form))]
+        features = []
+        for i in range(len(request.form)):
+            feature_value = request.form.get(f'feature_{i}')
+            try:
+                features.append(float(feature_value))  # Tenta converter para float
+            except ValueError:
+                features.append(0)  # Atribui 0 caso não consiga converter
         prediction = model.predict([features])[0]
-    
-    return render_template("predictions.html", prediction=prediction, filename=filename)
+        
+        # Gráfico de predições
+        plt.figure(figsize=(10, 6))
+        sns.barplot(x=list(range(len(features))), y=features)
+        plt.title("Previsões Realizadas")
+        plt.xlabel("Índice das Features")
+        plt.ylabel("Valor das Features")
+        prediction_plot_path = os.path.join("static", "prediction_plot.png")
+        plt.savefig(prediction_plot_path)
+
+    return render_template("predictions.html", prediction=prediction, filename=filename, prediction_plot_path=prediction_plot_path)
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

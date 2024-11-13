@@ -13,5 +13,12 @@
   {% if prediction %}
     <p>Resultado da Previsão: {{ prediction }}</p>
   {% endif %}
+<h2>Resultado da Predição</h2>
+<p>Predição: {{ prediction }}</p>
+<div>
+    <img src="{{ prediction_plot_path }}" alt="Gráfico de Predições">
+</div>
+
+
 </body>
 </html>

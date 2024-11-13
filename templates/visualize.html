@@ -6,6 +6,20 @@
   {{ data|safe }}
   <h2>Distribuição de Preços</h2>
   <img src="/static/plot.png" alt="Gráfico de Preço Médio">
-  <a href="{{ url_for('train_model', filename=filename) }}">Treinar Modelo</a>
+
+
+  <h2>Visualização dos Dados</h2>
+<div>
+    <img src="{{ plot_path }}" alt="Gráfico de Distribuição de Preços Médios">
+</div>
+<div>
+    <h3>Dados:</h3>
+    {{ data|safe }}
+</div>
+<br>
+<br>
+<hr>
+<h1>TREINAR MODELO</h1>
+<a href="{{ url_for('train_model', filename=filename) }}">LINK</a>
 </body>
 </html>
