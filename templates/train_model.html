@@ -31,7 +31,7 @@
   <h2>Resultado do Treinamento</h2>
 <p>R² Score: {{ score }}</p>
 <div>
-    <img src="{{ performance_plot_path }}" alt="Gráfico de Performance do Modelo">
+    <img src="{{ url_for('static', filename='performance_plot.png') }}" alt="Gráfico de Desempenho do Modelo">
 </div>
 
 </body>

@@ -75,6 +75,7 @@ def plot_data(filename):
     plt.ylabel("Frequência")
     plot_path = os.path.join("static", "plot.png")
     plt.savefig(plot_path)
+    plt.close()  # Fecha o gráfico após salvar
     return render_template("visualize.html", plot_path=plot_path, filename=filename)
 
 # Rota para configurar e treinar o modelo
@@ -118,6 +119,7 @@ def train_model(filename):
         plt.grid(True)
         performance_plot_path = os.path.join("static", "performance_plot.png")
         plt.savefig(performance_plot_path)
+        plt.close()
 
         # Salvar o modelo
         model_path = os.path.join("models", f"{model_choice}.joblib")
