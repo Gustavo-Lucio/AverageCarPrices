@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
 <head><title>Visualização de Dados</title></head>
 <body>
@@ -21,5 +21,43 @@
 <hr>
 <h1>TREINAR MODELO</h1>
 <a href="{{ url_for('train_model', filename=filename) }}">LINK</a>
+</body>
+</html> -->
+
+<!doctype html>
+<html lang="en">
+<head>
+    <title>Visualização de Dados</title>
+</head>
+<body>
+    <h1>Visualização de Dados</h1>
+
+    <!-- Tabela com as primeiras linhas do dataset -->
+    <h2>Primeiras Linhas do Dataset</h2>
+    <div>
+        {{ data|safe }}
+    </div>
+
+    <!-- Gráfico de Distribuição de Preços -->
+    <h2>Distribuição de Preços</h2>
+    <div>
+        <img src="{{ plot_path }}" alt="Gráfico de Distribuição de Preços Médios">
+    </div>
+
+    <hr>
+
+    <!-- Link para a seleção de carros -->
+    <h2>Seleção de Carros</h2>
+    <div>
+        <a href="{{ url_for('select_car', filename=filename) }}" class="btn btn-primary">Selecionar Carros</a>
+    </div>
+
+    <hr>
+
+    <!-- Treinamento do modelo -->
+    <h2>Treinar Modelo</h2>
+    <div>
+        <a href="{{ url_for('train_model', filename=filename) }}" class="btn btn-success">Treinar Modelo</a>
+    </div>
 </body>
 </html>

@@ -1,4 +1,4 @@
-<!doctype html>
+<!-- <!doctype html>
 <html lang="en">
 <head><title>Treinamento do Modelo</title></head>
 <body>
@@ -35,4 +35,51 @@
 </div>
 
 </body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Treinar Modelo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Treinar Modelo</h1>
+        <form method="POST">
+            <div class="mb-3">
+                <label for="target" class="form-label">Coluna Alvo (Target):</label>
+                <select id="target" name="target" class="form-select" required>
+                    {% for col in columns %}
+                        <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="features" class="form-label">Colunas de Features:</label>
+                <select id="features" name="features" class="form-select" multiple required>
+                    {% for col in columns %}
+                        <option value="{{ col }}">{{ col }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="mb-3">
+                <label for="model" class="form-label">Modelo:</label>
+                <select id="model" name="model" class="form-select" required>
+                    <option value="linear_regression">Regressão Linear</option>
+                    <option value="random_forest">Random Forest</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Treinar Modelo</button>
+        </form>
+        {% if score is not none %}
+            <h2 class="mt-5">Resultado do Modelo</h2>
+            <p>Acurácia: {{ score }}</p>
+            <img src="/{{ performance_plot_path }}" class="img-fluid" alt="Desempenho do Modelo">
+        {% endif %}
+    </div>
+</body>
 </html>
+
