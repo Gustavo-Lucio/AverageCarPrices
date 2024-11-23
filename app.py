@@ -1,7 +1,7 @@
-import numpy as np
-from flask import Flask, render_template, request, redirect, url_for
 import os
 import pandas as pd
+import numpy as np
+from flask import Flask, render_template, request, redirect, url_for
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.model_selection import train_test_split
@@ -14,40 +14,39 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['ALLOWED_EXTENSIONS'] = {'csv'}
 
-# Função para verificar se a extensão é permitida
+# Verifica extensões permitidas
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-# Função para aplicar Label Encoding
-def apply_label_encoding(df):
+# Aplica Label Encoding às colunas categóricas
+def apply_label_encoding(df, categorical_columns):
     label_encoders = {}
-    for col in df.select_dtypes(include=['object']).columns:
+    original_model_values = {}  # Dicionário para armazenar os valores originais da coluna 'model'
+
+    for col in categorical_columns:
         le = LabelEncoder()
-        df[col] = le.fit_transform(df[col])
-        label_encoders[col] = le  # Salve o LabelEncoder para futuras inversões ou predições
+        df[col] = le.fit_transform(df[col].astype(str))
+        label_encoders[col] = le
+
+        if col == 'model':
+            # Armazenar os valores originais de 'model'
+            original_model_values = dict(zip(le.transform(le.classes_), le.classes_))
+
+    # Após o Label Encoding, converte de volta os valores de 'model' para os nomes originais
+    if 'model' in df.columns:
+        df['model'] = df['model'].map(original_model_values)
+
     return df, label_encoders
 
-# Rota para página inicial e upload do CSV
-@app.route("/", methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
-        file = request.files.get('file')
-        if file and allowed_file(file.filename):
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(filepath)
-            return redirect(url_for('visualize_data', filename=file.filename))
-    return render_template("index.html")
-
-
-# Rota para visualização dos dados e análises
-@app.route("/visualize/<filename>")
-def visualize_data(filename):
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+# Função para limpar e preparar o dataset
+def clean_data(filepath):
     df = pd.read_csv(filepath)
 
     # Limpeza de dados
     print("Antes da limpeza:")
     print(df.isna().sum())  # Exibir a contagem de valores NaN
+
+    # Eliminar colunas desnecessárias
     df = df.drop(["fipe_code", "authentication", "gear", "year_model"], axis=1, errors="ignore")
     df = df.drop_duplicates()
 
@@ -64,12 +63,50 @@ def visualize_data(filename):
     print("Depois da limpeza:")
     print(df.isna().sum())  # Verificar novamente os valores NaN
 
-    # Transformação das variáveis categóricas para numéricas (Label Encoding)
-    df, label_encoders = apply_label_encoding(df)
+    # Aplicar Label Encoding somente em colunas categóricas (não em 'date')
+    categorical_columns = df.select_dtypes(include=['object']).columns
+    categorical_columns = categorical_columns[categorical_columns != 'date']  # Excluir 'date'
 
-    # Gráfico de distribuição
-    plt.figure(figsize=(10, 6))
+    df, label_encoders = apply_label_encoding(df, categorical_columns)
+
+    return df, label_encoders
+
+
+@app.route("/", methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        if file and allowed_file(file.filename):
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+            file.save(filepath)
+            
+            # Limpeza e preparação dos dados
+            df, _ = clean_data(filepath)
+
+            # Verificar se o arquivo já contém 'clean_' e evitar duplicação
+            filename = file.filename
+            if not filename.startswith("clean_"):
+                filename = f"clean_{filename}"
+
+            clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            df.to_csv(clean_filepath, index=False)
+            
+            # Redireciona para a visualização após upload
+            return redirect(url_for('visualize_data', filename=filename))
+    return render_template("index.html")
+
+@app.route("/visualize/<filename>")
+def visualize_data(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
+
+    # Exibe uma pré-visualização dos dados
+    df_html = df.head().to_html(classes='table table-striped')
+
+    # Gerar gráfico de distribuição de preços
+    plot_path = None
     if 'avg_price_brl' in df.columns:
+        plt.figure(figsize=(10, 6))
         sns.histplot(df['avg_price_brl'], bins=30, kde=True)
         plt.title("Distribuição de Preços Médios de Carros")
         plt.xlabel("Preço Médio (BRL)")
@@ -77,26 +114,17 @@ def visualize_data(filename):
         plot_path = os.path.join("static", "plot.png")
         plt.savefig(plot_path)
         plt.close()  # Fecha o gráfico após salvar
-    else:
-        plot_path = None
 
-    # Salvar dataset limpo
-    clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"clean_{filename}")
-    df.to_csv(clean_filepath, index=False)
-
-    df_html = df.head().to_html(classes='table table-striped')
     return render_template("visualize.html", data=df_html, filename=filename, plot_path=plot_path)
 
 
-
-# Rota para exibir gráficos
 @app.route("/plot/<filename>")
-def plot_data(filename, mcolors=None):
-    clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"clean_{filename}")
-    df = pd.read_csv(clean_filepath)
+def plot_data(filename):
+    clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{filename}")
+    if not os.path.exists(clean_filepath):
+        return f"Erro: Arquivo {clean_filepath} não encontrado.", 404
 
-    # Transformação das variáveis categóricas para numéricas (Label Encoding)
-    df, label_encoders = apply_label_encoding(df)
+    df = pd.read_csv(clean_filepath)
 
     if 'avg_price_brl' in df.columns and 'date' in df.columns:
         # Prepara os dados
@@ -131,58 +159,105 @@ def plot_data(filename, mcolors=None):
 
 
 
-# Rota para configurar e treinar o modelo
+
+
+@app.route("/select_car_model/<filename>", methods=['GET', 'POST'])
+def select_car_model(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    
+    # Limpeza do dataset
+    df, _ = clean_data(filepath)
+
+    # Verifica se a coluna 'model' existe
+    if 'model' not in df.columns:
+        return "Erro: Coluna 'model' não encontrada no dataset.", 400
+
+    # Obtém os modelos únicos
+    car_models = df['model'].unique()
+
+    if request.method == 'POST':
+        selected_models = request.form.getlist('selected_models')
+        if not selected_models:
+            return "Erro: Nenhum modelo selecionado.", 400
+
+        # Filtra os dados pelos modelos selecionados
+        filtered_df = df[df['model'].isin(selected_models)]
+
+        # Salva o dataset filtrado
+        filtered_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"filtered_{filename}")
+        filtered_df.to_csv(filtered_filepath, index=False)
+
+        return redirect(url_for('train_model', filename=f"filtered_{filename}"))
+
+    return render_template("select_car_model.html", car_models=car_models, filename=filename)
+
 @app.route("/train/<filename>", methods=['GET', 'POST'])
 def train_model(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    df = pd.read_csv(filepath)
     
-    # Transformação das variáveis categóricas para numéricas (Label Encoding)
-    df, label_encoders = apply_label_encoding(df)
+    if not os.path.exists(filepath):
+        return f"Erro: Arquivo {filename} não encontrado.", 404
     
+    df, label_encoders = clean_data(filepath)
+
+    # Transformação das colunas categóricas para numéricas, incluindo 'model'
+    if 'model' in df.columns:
+        le = LabelEncoder()
+        df['model'] = le.fit_transform(df['model'])
+
     if request.method == 'POST':
-        target = request.form['target']
-        features = request.form.getlist('features')
-        
-        X = df[features]
-        y = df[target]
-        
-        # Dividir dados
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
-        # Escolha de modelo
-        model_choice = request.form['model']
-        if model_choice == 'linear_regression':
-            model = LinearRegression()
-        elif model_choice == 'random_forest':
-            model = RandomForestRegressor()
-        
-        model.fit(X_train, y_train)
-        score = model.score(X_test, y_test)
-        
-        # Gráfico de performance do modelo
-        y_pred = model.predict(X_test)
-        
-        # Gráfico de dispersão: valores reais vs predições
-        plt.figure(figsize=(10, 6))
-        plt.scatter(y_test, y_pred, alpha=0.7)
-        plt.title("Valores Reais vs. Previsões")
-        plt.xlabel("Valor Real")
-        plt.ylabel("Previsão")
-        plt.grid(True)
-        performance_plot_path = os.path.join("static", "performance_plot.png")
-        plt.savefig(performance_plot_path)
-        plt.close()
+        try:
+            target = request.form['target']
+            features = request.form.getlist('features')
+            
+            if target not in df.columns or not set(features).issubset(df.columns):
+                return "Erro: Coluna alvo ou features inválidas.", 400
+            
+            X = df[features]
+            y = df[target]
 
-        # Salvar o modelo
-        model_path = os.path.join("models", f"{model_choice}.joblib")
-        joblib.dump(model, model_path)
-        
-        return render_template("train_model.html", score=score, filename=filename, performance_plot_path=performance_plot_path)
-    
-    return render_template("train_model.html", columns=df.columns, filename=filename)
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Rota para fazer predições
+            model_choice = request.form['model']
+            if model_choice == 'linear_regression':
+                model = LinearRegression()
+            elif model_choice == 'random_forest':
+                model = RandomForestRegressor()
+            else:
+                return "Erro: Modelo inválido selecionado.", 400
+
+            model.fit(X_train, y_train)
+            score = model.score(X_test, y_test)
+
+            y_pred = model.predict(X_test)
+            plt.figure(figsize=(10, 6))
+            plt.scatter(y_test, y_pred, alpha=0.7, label="Previsões")
+            plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], color="red", label="Ideal")
+            plt.title("Valores Reais vs. Previsões")
+            plt.xlabel("Valor Real")
+            plt.ylabel("Previsão")
+            plt.grid(True)
+            plt.legend()
+            performance_plot_path = os.path.join("static", "model_performance.png")
+            plt.savefig(performance_plot_path)
+            plt.close()
+
+            os.makedirs('models', exist_ok=True)
+            model_path = os.path.join("models", f"{model_choice}_{filename}.joblib")
+            joblib.dump(model, model_path)
+
+            return render_template(
+                "train_model.html",
+                score=score,
+                filename=filename,
+                performance_plot_path=performance_plot_path,
+                columns=df.columns
+            )
+        except Exception as e:
+            return f"Erro ao treinar o modelo: {e}", 500
+
+    return render_template("train_model.html", columns=df.columns, filename=filename, score=None)
+
 @app.route("/predict/<filename>", methods=['GET', 'POST'])
 def make_prediction(filename):
     model_path = os.path.join("models", "random_forest.joblib")  # exemplo de modelo carregado
@@ -210,55 +285,8 @@ def make_prediction(filename):
 
     return render_template("predictions.html", prediction=prediction, filename=filename, prediction_plot_path=prediction_plot_path)
 
-@app.route("/select_car/<filename>", methods=['GET', 'POST'])
-def select_car(filename):
-    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    df = pd.read_csv(filepath)
-
-    # Limpar nomes das colunas e remover espaços nos valores
-    df.columns = df.columns.str.strip()  # Remover espaços em torno dos nomes das colunas
-    for col in df.select_dtypes(include=["object"]).columns:
-        df[col] = df[col].str.strip()  # Remover espaços nos valores de strings apenas
-
-    selected_cars_html = None
-    columns = df.columns.tolist()  # Lista de colunas
-
-    if request.method == 'POST':
-        # Obter filtros preenchidos no formulário
-        filters = {col: request.form.get(col).strip() for col in columns if request.form.get(col)}
-
-        if filters:
-            # Debug: Imprimir os filtros recebidos
-            print("Filtros recebidos:", filters)
-
-            try:
-                # Aplicar os filtros manualmente para evitar erros no query
-                filtered_df = df.copy()
-                for col, value in filters.items():
-                    filtered_df = filtered_df[filtered_df[col].astype(str) == value]
-
-                # Debug: Verificar resultados
-                print("DataFrame filtrado:\n", filtered_df)
-
-                # Gerar HTML dos resultados
-                if not filtered_df.empty:
-                    selected_cars_html = filtered_df.to_html(classes='table table-striped', index=False)
-                else:
-                    selected_cars_html = "<p>Nenhum resultado encontrado com os filtros fornecidos.</p>"
-            except Exception as e:
-                print("Erro ao aplicar os filtros:", e)
-                selected_cars_html = f"<p>Erro ao aplicar filtros: {e}</p>"
-
-    return render_template(
-        "select_car.html",
-        columns=columns,
-        selected_cars=selected_cars_html,
-    )
-
-
-
-
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs('models', exist_ok=True)
+    os.makedirs('static', exist_ok=True)
     app.run(debug=True)

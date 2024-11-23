@@ -1,51 +1,30 @@
-<!-- <!doctype html>
-<html lang="en">
-<head><title>Previsão</title></head>
-<body>
-  <h2>Fazer uma Previsão</h2>
-  <form action="" method="post">
-    {% for i in range(0, 5) %}  
-      <label for="feature_{{ i }}">Feature {{ i }}:</label>
-      <input type="number" step="any" name="feature_{{ i }}">
-    {% endfor %}
-    <button type="submit">Prever</button>
-  </form>
-  {% if prediction %}
-    <p>Resultado da Previsão: {{ prediction }}</p>
-  {% endif %}
-<h2>Resultado da Predição</h2>
-<p>Predição: {{ prediction }}</p>
-<div>
-    <img src="{{ prediction_plot_path }}" alt="Gráfico de Predições">
-</div>
-
-
-</body>
-</html> -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Previsões</title>
+    <title>FIPECAR - Seleção de Veículos</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
 <body>
     <div class="container mt-5">
-        <h1>Fazer Previsão</h1>
-        <form method="POST">
-            {% for i in range(10) %}
-                <div class="mb-3">
-                    <label for="feature_{{ i }}" class="form-label">Feature {{ i+1 }}</label>
-                    <input type="text" class="form-control" id="feature_{{ i }}" name="feature_{{ i }}" placeholder="Valor da Feature {{ i+1 }}">
-                </div>
+        <h1 class="text-center">Seleção de Veículos</h1>
+        <form action="/select_car/{{ filename }}" method="POST" class="mt-4">
+            {% for col in columns %}
+            <div class="mb-3">
+                <label for="{{ col }}" class="form-label">{{ col }}</label>
+                <input type="text" name="{{ col }}" class="form-control" placeholder="Filtro para {{ col }}">
+            </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary">Prever</button>
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
         </form>
-        {% if prediction is not none %}
-            <h2 class="mt-5">Resultado da Previsão</h2>
-            <p>Valor Previsto: {{ prediction }}</p>
+        {% if selected_cars %}
+        <div class="mt-5">
+            <h3>Resultados Filtrados</h3>
+            <div class="table-responsive">
+                {{ selected_cars|safe }}
+            </div>
+        </div>
         {% endif %}
     </div>
 </body>
