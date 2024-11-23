@@ -1,73 +1,34 @@
-<!-- <!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head><title>Visualização de Dados</title></head>
-<body>
-  <h2>Primeiras Linhas do Dataset</h2>
-  {{ data|safe }}
-  <h2>Distribuição de Preços</h2>
-  <img src="/static/plot.png" alt="Gráfico de Preço Médio">
 
-
-  <h2>Visualização dos Dados</h2>
-<div>
-    <img src="{{ plot_path }}" alt="Gráfico de Distribuição de Preços Médios">
-</div>
-<div>
-    <h3>Dados:</h3>
-    {{ data|safe }}
-</div>
-<br>
-<br>
-<hr>
-<h1>TREINAR MODELO</h1>
-<a href="{{ url_for('train_model', filename=filename) }}">LINK</a>
-</body>
-</html> -->
-
-<!doctype html>
-<html lang="en">
 <head>
-    <title>Visualização de Dados</title>
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIPECAR - Visualização</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
 </head>
+
 <body>
-    <h1>Visualização de Dados</h1>
+    <div class="container mt-5">
+        <div class="mt-5">
+            <a href="/select_car_model/{{ filename }}" class="btn btn-success">Treinar Modelo</a>
+        </div>
+        <div class="mt-5">
+            <a href="/plot/{{ filename }}" class="btn btn-success">Explorar Gráficos</a>
+        </div>
+    </div>
+    <h1 class="text-center">Visualização do Dataset</h1>
 
-    <!-- Tabela com as primeiras linhas do dataset -->
-    <h2>Primeiras Linhas do Dataset</h2>
-    <div>
-        {{ data|safe }}
+    <div class="mt-4">
+        <h3>Pré-visualização dos Dados</h3>
+        <div class="table-responsive">
+           
+            {{ data|safe }}
+        </div>
     </div>
 
-    <!-- Gráfico de Distribuição de Preços -->
-    <h2>Distribuição de Preços</h2>
-    <div>
-        <img src="/static/plot.png" alt="Gráfico de Preço Médio">
-    </div>
-
-    <hr>
-
-    <!-- Link para a seleção de carros -->
-    <h2>Seleção de Carros</h2>
-    <div>
-        <a href="{{ url_for('select_car', filename=filename) }}" class="btn btn-primary">Selecionar Carros</a>
-    </div>
-
-    <hr>
-
-    <!-- Treinamento do modelo -->
-    <h2>Treinar Modelo</h2>
-    <div>
-        <a href="{{ url_for('train_model', filename=filename) }}" class="btn btn-success">Treinar Modelo</a>
-    </div>
-
-    <hr>
-
-    <!-- Link para a página de gráficos -->
-    <h2>Explorar Gráficos</h2>
-    <div>
-        <a href="{{ url_for('plot_data', filename=filename) }}" class="btn btn-info">Ver Gráficos</a>
-    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
+
 </html>
 
