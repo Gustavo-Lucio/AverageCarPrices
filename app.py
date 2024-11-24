@@ -330,11 +330,19 @@ def train_model(filename):
 
 @app.route("/predict/<filename>", methods=['GET', 'POST'])
 def make_prediction(filename):
-    model_path = os.path.join("models", "random_forest.joblib")  # exemplo de modelo carregado
-    model = joblib.load(model_path)
+    # Carregar o modelo treinado (supondo que seja o RandomForest)
+    model_path = os.path.join("models", "random_forest.joblib")
+
+    try:
+        model = joblib.load(model_path)
+    except FileNotFoundError:
+        return f"Erro: Modelo não encontrado.", 404
+
     prediction = None
+    prediction_plot_path = None  # Variável para salvar o caminho do gráfico
 
     if request.method == 'POST':
+        # Extrair as features fornecidas pelo usuário
         features = []
         for i in range(len(request.form)):
             feature_value = request.form.get(f'feature_{i}')
@@ -342,9 +350,11 @@ def make_prediction(filename):
                 features.append(float(feature_value))  # Tenta converter para float
             except ValueError:
                 features.append(0)  # Atribui 0 caso não consiga converter
+
+        # Realizar a previsão
         prediction = model.predict([features])[0]
-        
-        # Gráfico de predições
+
+        # Gerar gráfico de predições (Exemplo: gráfico de barras)
         plt.figure(figsize=(10, 6))
         sns.barplot(x=list(range(len(features))), y=features)
         plt.title("Previsões Realizadas")
@@ -353,7 +363,8 @@ def make_prediction(filename):
         prediction_plot_path = os.path.join("static", "prediction_plot.png")
         plt.savefig(prediction_plot_path)
 
-    return render_template("predictions.html", prediction=prediction, filename=filename, prediction_plot_path=prediction_plot_path)
+    return render_template("predictions.html", prediction=prediction, filename=filename,
+                           prediction_plot_path=prediction_plot_path, columns=model.feature_names_in_)
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
