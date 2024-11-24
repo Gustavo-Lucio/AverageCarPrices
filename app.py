@@ -3,11 +3,14 @@ import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for
 import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.preprocessing import LabelEncoder
+import plotly.express as px
+import plotly.graph_objects as go
 import joblib
 
 app = Flask(__name__)
@@ -63,9 +66,13 @@ def clean_data(filepath):
     print("Depois da limpeza:")
     print(df.isna().sum())  # Verificar novamente os valores NaN
 
-    # Aplicar Label Encoding somente em colunas categóricas (não em 'date')
+    # Aplicar Label Encoding somente em colunas categóricas (não em 'date' 'fuel' 'brand')
     categorical_columns = df.select_dtypes(include=['object']).columns
-    categorical_columns = categorical_columns[categorical_columns != 'date']  # Excluir 'date'
+    categorical_columns = categorical_columns[
+        (categorical_columns != 'date') &
+        (categorical_columns != 'fuel') &
+        (categorical_columns != 'brand')]
+    # Excluir 'date' 'fuel' 'brand'
 
     df, label_encoders = apply_label_encoding(df, categorical_columns)
 
@@ -119,46 +126,109 @@ def visualize_data(filename):
 
 
 @app.route("/plot/<filename>")
-def plot_data(filename):
-    clean_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{filename}")
-    if not os.path.exists(clean_filepath):
-        return f"Erro: Arquivo {clean_filepath} não encontrado.", 404
+def visualize_graphs(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
 
-    df = pd.read_csv(clean_filepath)
-
+    # Gráfico de Regressão (usando Matplotlib)
     if 'avg_price_brl' in df.columns and 'date' in df.columns:
-        # Prepara os dados
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
         df = df.dropna(subset=['date', 'avg_price_brl'])
-        medias_data = df.groupby("date")["avg_price_brl"].mean()
+
+        # Agrupar por mês e ano
+        df['year_month'] = df['date'].dt.to_period('M')
+        medias_data = df.groupby("year_month")["avg_price_brl"].mean()
+
+        # Transformar os dados de datas para string com formato 'YYYY-MM'
         datas = medias_data.index.astype(str)
         valores = np.arange(len(datas))
 
-        # Criar gráfico
+        # Gráfico de Regressão
         plt.figure(figsize=(12, 7))
         sns.scatterplot(x=datas, y=medias_data, c=valores, cmap="viridis")
 
+        # Regressão Linear
         coeficientes = np.polyfit(valores, medias_data, 1)
         regressao = np.polyval(coeficientes, valores)
         plt.plot(datas, regressao, color="red", label="Regressão Linear")
 
-        # Configurações do gráfico
         plt.title("Preço Médio dos Carros por Mês")
         plt.ylabel("Preço Médio")
-        plt.xlabel("Data")
+        plt.xlabel("Ano-Mês")
+
+        # Ajuste dos rótulos no eixo X para mostrar apenas ano e mês
         plt.xticks(rotation=45)
 
         # Salvar o gráfico
-        plot_path = os.path.join("static", "regression_plot.png")
-        plt.savefig(plot_path)
+        regression_plot_path = os.path.join("static", "regression_plot.png")
+        plt.savefig(regression_plot_path)
         plt.close()
 
-        return render_template("visualize_graficos.html", plot_path=plot_path, filename=filename)
-    else:
-        return "<p>Colunas necessárias não encontradas no dataset.</p>"
+    # Gráfico de Distribuição de Preços Médios
+    if 'avg_price_brl' in df.columns:
+        plt.figure(figsize=(10, 6))
+        sns.histplot(df['avg_price_brl'], bins=30, kde=True)
+        plt.title("Distribuição de Preços Médios de Carros")
+        plt.xlabel("Preço Médio (BRL)")
+        plt.ylabel("Frequência")
+        price_distribution_plot_path = os.path.join("static", "price_distribution_plot.png")
+        plt.savefig(price_distribution_plot_path)
+        plt.close()
 
+    # Gráfico de Distribuição do Tamanho dos Motores
+    if 'engine_size' in df.columns:
+        # Definir as cores para cada combustível
+        cores2 = [px.colors.qualitative.Plotly[0], px.colors.qualitative.Plotly[1], px.colors.qualitative.D3[2]]
 
+        # Plotando o histograma de distribuição do tamanho do motor
+        plt.figure(figsize=(12, 7))
+        sns.histplot(df, x="engine_size", bins=30, hue="fuel", stat="probability", multiple="stack",
+                     palette=cores2, alpha=0.7, kde=True)  # Histograma do tamanho dos motores
 
+        plt.title("Distribuição do Tamanho dos Motores (cm³)")
+        plt.ylabel("Frequência Relativa")
+        plt.xlabel("Tamanho do Motor")
+
+        # Adicionando a legenda
+        Alcohol = mlines.Line2D([], [], color=px.colors.qualitative.D3[2], marker='s', linestyle='None',
+                                markersize=12, label='Alcohol')
+        Diesel = mlines.Line2D([], [], color=px.colors.qualitative.Plotly[1], marker='s', linestyle='None',
+                               markersize=12, label='Diesel')
+        Gasoline = mlines.Line2D([], [], color=px.colors.qualitative.Plotly[0], marker='s',
+                                 linestyle='None', markersize=12, label='Gasoline')
+
+        plt.legend(handles=[Alcohol, Diesel, Gasoline], title="Combustível", title_fontsize="x-large",
+                   fontsize="x-large")
+
+        # Salvar o gráfico
+        engine_size_distribution_plot_path = os.path.join("static", "engine_size_distribution_plot.png")
+        plt.savefig(engine_size_distribution_plot_path)
+        plt.close()
+
+    # Gráfico de Proporção de Combustíveis (usando Plotly)
+    if 'fuel' in df.columns:
+        df_combustivel = pd.DataFrame()
+        df_combustivel["Combustível"] = df["fuel"].unique()  # Separando os tipos de combustíveis
+        df_combustivel["Frequência"] = np.array(df["fuel"].value_counts())  # Frequência Absoluta
+
+        # Seleção de cores para o gráfico
+        fig = px.pie(df_combustivel, values="Frequência", names="Combustível",
+                     title="Proporção de Combustíveis no DataSet", template="presentation",
+                     color_discrete_sequence=cores2)  # Plot do gráfico de pizza
+        fig.update_layout(width=800, height=500)
+        fig.update_traces(textposition="inside", textinfo="percent+label")
+
+        # Salvar o gráfico de pizza como imagem
+        fuel_proportion_plot_path = os.path.join("static", "fuel_proportion_plot.png")
+        fig.write_image(fuel_proportion_plot_path)
+
+    # Renderização no Template
+    return render_template("visualize_graficos.html",
+                           regression_plot_path=regression_plot_path,
+                           price_distribution_plot_path=price_distribution_plot_path,
+                           engine_size_distribution_plot_path=engine_size_distribution_plot_path,
+                           fuel_proportion_plot_path=fuel_proportion_plot_path,
+                           filename=filename)
 
 
 @app.route("/select_car_model/<filename>", methods=['GET', 'POST'])

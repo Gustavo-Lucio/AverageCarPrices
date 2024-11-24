@@ -1,0 +1,131 @@
+@app.route("/plot/<filename>")
+def visualize_graphs(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
+
+    # Gráfico de Preços Médios ao Longo do Tempo (Plotly)
+    price_trend_dates = df['date'].dropna().unique()
+
+    # Verifica se os dados em 'date' são strings ou datetime e converte para datetime se necessário
+    if isinstance(price_trend_dates[0], str):  # Se os dados são strings
+        price_trend_dates = pd.to_datetime(price_trend_dates)  # Converte para datetime
+
+    # Agora podemos aplicar o strftime para formatar corretamente
+    price_trend_dates = [date.strftime('%Y-%m') for date in price_trend_dates]  # Convertendo para strings
+
+    price_trend_values = df.groupby('date')['avg_price_brl'].mean().values
+    price_trend_values = price_trend_values.tolist()  # Convertendo para lista de valores numéricos
+
+    # Gráfico Interativo de Preços Médios ao Longo do Tempo
+    price_trend_data = go.Scatter(
+        x=price_trend_dates,
+        y=price_trend_values,
+        mode='lines+markers',
+        name='Preço Médio',
+    )
+    price_trend_layout = go.Layout(
+        title='Evolução dos Preços Médios de Carros',
+        xaxis={'title': 'Data'},
+        yaxis={'title': 'Preço Médio (BRL)'},
+    )
+    price_trend_fig = go.Figure(data=[price_trend_data], layout=price_trend_layout)
+
+    # Preço Médio por Modelo (Plotly)
+    price_by_model = df.groupby('model')['avg_price_brl'].mean().reset_index()
+    price_by_model_data = {
+        "model_names": price_by_model['model'].tolist(),
+        "avg_prices": price_by_model['avg_price_brl'].tolist()
+    }
+
+    # Gráfico Interativo de Preço por Modelo
+    price_by_model_data = go.Bar(
+        x=price_by_model_data['model_names'],
+        y=price_by_model_data['avg_prices'],
+        name='Preço Médio por Modelo',
+    )
+    price_by_model_layout = go.Layout(
+        title='Preço Médio por Modelo de Carro',
+        xaxis={'title': 'Modelo de Carro'},
+        yaxis={'title': 'Preço Médio (BRL)'},
+    )
+    price_by_model_fig = go.Figure(data=[price_by_model_data], layout=price_by_model_layout)
+
+    # Gráfico de Dispersão entre Preço e Características (Plotly)
+    # Verificando e convertendo a coluna 'date' para datetime
+    df['date'] = pd.to_datetime(df['date'], errors='coerce')  # Converte 'date' para datetime, tratando erros
+
+    # Agora podemos extrair o ano corretamente
+    df['year'] = df['date'].dt.year  # Extraímos o ano da coluna 'date'
+    feature_price_data = {
+        "feature_values": df['year'].dropna().tolist(),
+        "prices": df['avg_price_brl'].dropna().tolist()
+    }
+
+    # Gráfico Interativo de Dispersão entre Preço e Características
+    price_feature_data = go.Scatter(
+        x=feature_price_data['feature_values'],
+        y=feature_price_data['prices'],
+        mode='markers',
+        name='Preço vs Características',
+    )
+    price_feature_layout = go.Layout(
+        title='Dispersão entre Preço e Características do Carro',
+        xaxis={'title': 'Valor das Características'},
+        yaxis={'title': 'Preço Médio (BRL)'},
+    )
+    price_feature_fig = go.Figure(data=[price_feature_data], layout=price_feature_layout)
+
+    return render_template(
+        "visualize_graficos.html",
+        filename=filename,
+        price_trend_fig=price_trend_fig.to_html(full_html=False),
+        price_by_model_fig=price_by_model_fig.to_html(full_html=False),
+        price_feature_fig=price_feature_fig.to_html(full_html=False),
+    )
+
+
+
+html
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos Interativos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.plotly.com/2.20.0/plotly.min.js"></script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Análise de Preços de Carros</h1>
+        <hr>
+
+        <!-- Gráfico Interativo de Preços Médios ao Longo do Tempo -->
+        <h2 class="mt-4">Evolução dos Preços Médios</h2>
+        <div>
+            <div id="price_trend_plot">{{ price_trend_fig | safe }}</div>
+        </div>
+        <hr>
+
+        <!-- Gráfico Interativo de Preço Médio por Modelo -->
+        <h2 class="mt-4">Preço Médio por Modelo de Carro</h2>
+        <div>
+            <div id="price_by_model_plot">{{ price_by_model_fig | safe }}</div>
+        </div>
+        <hr>
+
+        <!-- Gráfico Interativo de Dispersão entre Preço e Características -->
+        <h2 class="mt-4">Dispersão entre Preço e Características</h2>
+        <div>
+            <div id="price_feature_scatter_plot">{{ price_feature_fig | safe }}</div>
+        </div>
+        <hr>
+
+        <!-- Botão para voltar -->
+        <div class="mt-4">
+            <a href="{{ url_for('visualize_data', filename=filename) }}" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+</body>
+</html>
