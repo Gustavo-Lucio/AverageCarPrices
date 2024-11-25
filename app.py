@@ -124,9 +124,8 @@ def visualize_data(filename):
 
     return render_template("visualize.html", data=df_html, filename=filename, plot_path=plot_path)
 
-
-@app.route("/plot/<filename>")
-def visualize_graphs(filename):
+@app.route("/visualize_graphs_static/<filename>")
+def visualize_graphs_static(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     df = pd.read_csv(filepath)
 
@@ -223,12 +222,59 @@ def visualize_graphs(filename):
         fig.write_image(fuel_proportion_plot_path)
 
     # Renderização no Template
-    return render_template("visualize_graficos.html",
+    return render_template("visualize_graficos_estaticos.html",
                            regression_plot_path=regression_plot_path,
                            price_distribution_plot_path=price_distribution_plot_path,
                            engine_size_distribution_plot_path=engine_size_distribution_plot_path,
                            fuel_proportion_plot_path=fuel_proportion_plot_path,
                            filename=filename)
+
+
+
+@app.route("/visualize_graphs_interactive/<filename>")
+def visualize_graphs_interactive(filename):
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    df = pd.read_csv(filepath)
+
+    # Gráfico de Preços Médios ao Longo do Tempo (Plotly)
+    price_trend_dates = df['date'].dropna().unique()
+
+    # Verifica se os dados em 'date' são strings ou datetime e converte para datetime se necessário
+    if isinstance(price_trend_dates[0], str):  # Se os dados são strings
+        price_trend_dates = pd.to_datetime(price_trend_dates, errors='coerce')  # Converte para datetime e ignora erros
+
+    # Agora podemos aplicar o strftime para formatar corretamente
+    price_trend_dates = [date.strftime('%Y-%m') for date in price_trend_dates if pd.notnull(date)]  # Convertendo para strings
+
+    price_trend_values = df.groupby('date')['avg_price_brl'].mean().values
+    price_trend_values = price_trend_values.tolist()  # Convertendo para lista de valores numéricos
+
+    # Gráfico Interativo de Preços Médios ao Longo do Tempo
+    price_trend_data = go.Scatter(
+        x=price_trend_dates,
+        y=price_trend_values,
+        mode='lines+markers',
+        name='Preço Médio',
+    )
+    price_trend_layout = go.Layout(
+        title='Evolução dos Preços Médios de Carros',
+        xaxis={'title': 'Data'},
+        yaxis={'title': 'Preço Médio (BRL)'},
+    )
+    price_trend_fig = go.Figure(data=[price_trend_data], layout=price_trend_layout)
+
+    return render_template(
+        "visualize_graficos.html",
+        filename=filename,
+        price_trend_fig=price_trend_fig.to_html(full_html=False)
+    )
+
+
+
+
+
+
+
 
 
 @app.route("/select_car_model/<filename>", methods=['GET', 'POST'])
