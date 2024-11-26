@@ -13,6 +13,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.subplots as sp
+from plotly.subplots import make_subplots
 import joblib
 
 app = Flask(__name__)
@@ -232,7 +234,6 @@ def visualize_graphs_static(filename):
                            filename=filename)
 
 
-
 @app.route("/visualize_graphs_interactive/<filename>")
 def visualize_graphs_interactive(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
@@ -246,7 +247,8 @@ def visualize_graphs_interactive(filename):
         price_trend_dates = pd.to_datetime(price_trend_dates, errors='coerce')  # Converte para datetime e ignora erros
 
     # Agora podemos aplicar o strftime para formatar corretamente
-    price_trend_dates = [date.strftime('%Y-%m') for date in price_trend_dates if pd.notnull(date)]  # Convertendo para strings
+    price_trend_dates = [date.strftime('%Y-%m') for date in price_trend_dates if
+                         pd.notnull(date)]  # Convertendo para strings
 
     price_trend_values = df.groupby('date')['avg_price_brl'].mean().values
     price_trend_values = price_trend_values.tolist()  # Convertendo para lista de valores numéricos
@@ -262,14 +264,141 @@ def visualize_graphs_interactive(filename):
         title='Evolução dos Preços Médios de Carros',
         xaxis={'title': 'Data'},
         yaxis={'title': 'Preço Médio (BRL)'},
+        height=500,
+        width=1000,
     )
     price_trend_fig = go.Figure(data=[price_trend_data], layout=price_trend_layout)
 
-    return render_template(
-        "visualize_graficos.html",
-        filename=filename,
-        price_trend_fig=price_trend_fig.to_html(full_html=False)
+    # Gráfico da Relação entre Combustível e Tamanho do Motor (Plotly Express)
+    df_combustivel = df.groupby("fuel")["engine_size"].mean().reset_index()
+    df_combustivel["Tamanho do Motor"] = df_combustivel["engine_size"]
+
+    # Criando o gráfico de barras
+    fig_combustivel_motor = px.bar(
+        df_combustivel,
+        x="fuel",
+        y="Tamanho do Motor",
+        title="Média do Tamanho do Motor (cm³) por Combustível",
+        color="fuel",
+        color_discrete_sequence=["#636EFA", "#EF553B", "#00CC96", "#AB63FA"]  # Cores para os combustíveis
     )
+    fig_combustivel_motor.update_layout(width=800, height=500, showlegend=False, title_x=0.5)
+
+    # Gráfico de Comparação de Preços Médios e Quantidade de Modelos por Marca
+    marcas = np.array(
+        ['BMW', 'Ferrari', 'Ford', 'GM - Chevrolet', 'Honda', 'Jeep', 'Mclaren', 'Mercedes-Benz', 'Toyota',
+         'VW - VolksWagen'])  # Marcas escolhidas
+
+    dfm = df[df['brand'].isin(marcas)]  # Filtra as marcas selecionadas
+    df_marcas = pd.DataFrame()
+    df_marcas['Marca'] = marcas
+    df_marcas['Preço Médio'] = list(dfm.groupby('brand')['avg_price_brl'].mean())  # Média dos preços
+    df_marcas["Modelos"] = list(dfm.groupby("brand")["model"].nunique())  # Quantidade de modelos diferentes por marca
+
+    # Gráfico de subplots
+    fig_comparacao = sp.make_subplots(rows=1, cols=2)
+
+    # Preço Médio
+    indices_ordenados1 = df_marcas["Preço Médio"].sort_values(ascending=False).index
+    fig_comparacao.add_trace(go.Bar(
+        x=df_marcas["Marca"].iloc[indices_ordenados1],
+        y=df_marcas["Preço Médio"].sort_values(ascending=False),
+        name="Preço Médio",
+        marker_color=px.colors.qualitative.Alphabet[0]
+    ), row=1, col=1)
+
+    # Quantidade de Modelos
+    indices_ordenados2 = df_marcas["Modelos"].sort_values(ascending=False).index
+    fig_comparacao.add_trace(go.Bar(
+        x=df_marcas["Marca"].iloc[indices_ordenados2],
+        y=df_marcas["Modelos"].sort_values(ascending=False),
+        name="Quantidade de Modelos",
+        marker_color=px.colors.qualitative.Bold[8]
+    ), row=1, col=2)
+
+    fig_comparacao.update_layout(
+        title_text="Comparação de Marcas Famosas: Preço Médio e Quantidade de Modelos",
+        title_x=0.5,
+        title_font=dict(size=20, color="black"),
+        showlegend=False,
+        margin=dict(t=120, b=60, l=60, r=60),  # Ajuste a margem superior para mais espaço
+
+        annotations=[
+            dict(
+                x=0.12, y=1.05, xref='paper', yref='paper',  # Ajuste o valor de y para 1.05
+                text='Preço Médio por Marca (Milhões de Reais)', showarrow=False,
+                font=dict(size=15),
+                xanchor='center',  # Ajusta o alinhamento das anotações
+                yanchor='bottom'  # Ajuste o ancoramento para evitar sobreposição
+            ),
+            dict(
+                x=0.88, y=1.05, xref='paper', yref='paper',  # Ajuste o valor de y para 1.05
+                text='Quantidade de Modelos Diferentes por Marca', showarrow=False,
+                font=dict(size=15),
+                xanchor='center',  # Ajusta o alinhamento das anotações
+                yanchor='bottom'  # Ajuste o ancoramento para evitar sobreposição
+            )
+        ],
+        font=dict(size=15),
+        height=700,  # Altura fixa
+        width=1100,  # Largura fixa
+    )
+
+    fig_comparacao.update_xaxes(tickangle=40)
+
+    # Preparando os dados para o gráfico de Proporções de Combustíveis por Marca
+    df_marcas_combustivel = dfm.groupby("brand")["engine_size"].mean().reset_index()
+    df_marcas_combustivel["Tamanho Médio dos Motores"] = df_marcas_combustivel[
+        "engine_size"]  # Tamanho médio do motor por marca
+
+    proporcoes = dfm.groupby(["brand", "fuel"]).size() / dfm.groupby(
+        "brand").size()  # Calculando as proporções para cada marca
+    df_proporcoes = proporcoes.unstack(level='fuel').reset_index().fillna(0)
+
+    # Criando o gráfico de barras de proporções de combustíveis
+    fig_prop = px.bar(df_proporcoes, "brand", ["Gasoline", "Diesel", "Alcohol"],
+                      color_discrete_sequence=["#636EFA", "#EF553B", "#00CC96"])
+
+    # Criando o gráfico combinado de Tamanho Médio dos Motores e Proporção de Combustíveis
+    fig_comparacao_combustivel = make_subplots(
+        rows=1, cols=2,
+        subplot_titles=("Tamanho Médio dos Motores", "Proporção de Combustíveis por Marca"),
+        shared_yaxes=False
+    )
+
+    # Adicionando o gráfico de Tamanho Médio dos Motores
+    fig_comparacao_combustivel.add_trace(go.Bar(
+        x=df_marcas_combustivel["brand"], y=df_marcas_combustivel["Tamanho Médio dos Motores"],
+        name="Tamanho Médio dos Motores", marker_color=px.colors.qualitative.D3[9], showlegend=False),
+        row=1, col=1
+    )
+
+    # Adicionando os gráficos de Proporções de Combustíveis
+    for combu in fig_prop.data:
+        fig_comparacao_combustivel.add_trace(combu, row=1, col=2)
+
+    # Atualizando o layout do gráfico combinado
+    fig_comparacao_combustivel.update_layout(
+        title_text="Comparação de Proporção de Combustíveis e Tamanho dos Motores por Marca",
+        title_x=0.5,
+        title_font=dict(size=20, color="black"),
+        font=dict(size=15),
+        barmode="stack",
+        height=600,
+        width=1200
+    )
+    fig_comparacao_combustivel.update_xaxes(tickangle=40)
+
+    # Renderizando a template com os três gráficos
+    return render_template(
+        "visualize_graficos_interativos.html",
+        filename=filename,
+        price_trend_fig=price_trend_fig.to_html(full_html=False),
+        fig_combustivel_motor=fig_combustivel_motor.to_html(full_html=False),
+        fig_comparacao=fig_comparacao.to_html(full_html=False),
+        fig_comparacao_combustivel=fig_comparacao_combustivel.to_html(full_html=False)
+    )
+
 
 def train_models(df):
     # Inicializando o LabelEncoder

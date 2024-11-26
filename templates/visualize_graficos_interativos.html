@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráficos Interativos</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.plotly.com/2.20.0/plotly.min.js"></script>
+
+    <style>
+        .graph-container {
+            display: none;
+        }
+    </style>
+
+    <script>
+        // Função para alternar entre os gráficos
+        function showGraph(graphId) {
+            // Esconde todos os gráficos
+            const allGraphs = document.querySelectorAll('.graph-container');
+            allGraphs.forEach(graph => {
+                graph.style.display = 'none';
+            });
+
+            // Mostra o gráfico selecionado
+            const selectedGraph = document.getElementById(graphId);
+            selectedGraph.style.display = 'block';
+        }
+    </script>
+</head>
+<body>
+    <div class="container mt-4">
+        <h1 class="text-center">Análise de Preços de Carros</h1>
+        <hr>
+
+        <!-- Botões para navegar entre os gráficos -->
+        <div class="btn-group" role="group" aria-label="Botões de navegação">
+            <button type="button" class="btn btn-primary" onclick="showGraph('price-trend-graph')">Evolução dos Preços Médios</button>
+            <button type="button" class="btn btn-primary" onclick="showGraph('fuel-engine-size-graph')">Relação entre Combustível e Tamanho do Motor</button>
+            <button type="button" class="btn btn-primary" onclick="showGraph('fig-comparacao-graph')">Comparação de Preços Médios e Quantidade de Modelos</button>
+            <button type="button" class="btn btn-primary" onclick="showGraph('fig-comparacao-combustivel-graph')">Comparação de Tamanho do Motor e Combustivel por Marca</button>
+        </div>
+
+        <!-- Gráfico Interativo de Preços Médios ao Longo do Tempo -->
+        <div class="graph-container" id="price-trend-graph">
+            <div>
+                <div id="price_trend_plot">{{ price_trend_fig | safe }}</div>
+            </div>
+            <hr>
+        </div>
+
+        <!-- Gráfico Interativo da Relação entre Combustível e Tamanho do Motor -->
+        <div class="graph-container" id="fuel-engine-size-graph">
+            <div>
+                <div id="fig_combustivel_motor_plot">{{ fig_combustivel_motor | safe }}</div>
+            </div>
+            <hr>
+        </div>
+
+         <!-- Gráfico Interativo de Comparação de Preços Médios e Quantidade de Modelos -->
+        <div class="graph-container" id="fig-comparacao-graph">
+            <div>
+                <div id="fig_comparacao_plot">{{ fig_comparacao | safe }}</div>
+            </div>
+            <hr>
+        </div>
+
+         <!-- Gráfico Interativo de Comparação de Preços Médios e Quantidade de Modelos -->
+        <div class="graph-container" id="fig-comparacao-combustivel-graph">
+            <div>
+                <div id="fig_comparacao_combustivel_plot">{{ fig_comparacao_combustivel | safe }}</div>
+            </div>
+            <hr>
+        </div>
+
+        <!-- Botão para voltar -->
+        <div class="mt-4">
+            <a href="{{ url_for('visualize_data', filename=filename) }}" class="btn btn-secondary">Voltar</a>
+        </div>
+    </div>
+
+    <script>
+        // Exibir o primeiro gráfico (Evolução dos Preços Médios) por padrão
+        showGraph('price-trend-graph');
+    </script>
+
+</body>
+</html>
