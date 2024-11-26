@@ -11,10 +11,11 @@
         .search-bar {
             margin-bottom: 15px;
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             font-size: 16px;
             border-radius: 5px;
             border: 1px solid #ddd;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
         }
 
         /* Contêiner dos checkboxes com rolagem */
@@ -23,8 +24,9 @@
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 5px;
-            padding: 10px;
+            padding: 15px;
             background-color: #f9f9f9;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         /* Estilizando os itens de checkbox */
@@ -41,38 +43,75 @@
             margin-right: 10px;
         }
 
-        /* Estilo do botão */
+        /* Estilo dos botões */
+        .btn-custom, .btn-secondary {
+            border-radius: 5px;
+            padding: 12px;
+            font-size: 16px;
+            width: 100%;
+            transition: transform 0.2s, background-color 0.3s ease;
+        }
+
         .btn-custom {
             background-color: #007bff;
             color: white;
-            border-radius: 5px;
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
             border: none;
-            transition: background-color 0.3s ease;
         }
 
         .btn-custom:hover {
             background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+            transform: translateY(-2px);
         }
 
         /* Título e container */
         .container {
             margin-top: 50px;
+            max-width: 800px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
-        
+
+        h1 {
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 30px;
+        }
+
+        footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1 class="text-center mb-4">Seleção de Modelos de Carro para Treinamento</h1>
+        <h1 class="text-center">Seleção de Modelos de Carro para Treinamento</h1>
 
-        <!-- Barra de pesquisa -->
+        <a href="http://127.0.0.1:5000/visualize/{{filename}}" class="btn btn-secondary mb-4">Voltar para a Visualização</a>
+
         <input type="text" id="searchInput" class="search-bar" placeholder="Digite para filtrar os modelos...">
-        
+
         <form method="POST">
-            <!-- Contêiner dos checkboxes com rolagem -->
+            <div class="d-flex gap-2 mb-3">
+                <button type="button" id="selectAllBtn" class="btn btn-secondary">Selecionar Todos</button>
+
+                <button type="button" id="deselectAllBtn" class="btn btn-secondary">Desmarcar Todos</button>
+            </div>
+
             <div class="checkbox-container" id="checkboxContainer">
                 {% for model in car_models %}
                     <div class="checkbox-item">
@@ -82,22 +121,24 @@
                 {% endfor %}
             </div>
 
-            <!-- Botão para submeter o formulário -->
             <button type="submit" class="btn btn-custom mt-3">Filtrar Modelos</button>
         </form>
     </div>
 
-    <!-- Scripts Bootstrap -->
+    <footer>
+        <p>&copy; 2024 FIPECAR. Todos os direitos reservados.</p>
+    </footer>
+
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
 
     <script>
-        // Referência à barra de pesquisa e contêiner dos checkboxes
         const searchInput = document.getElementById('searchInput');
         const checkboxContainer = document.getElementById('checkboxContainer');
         const checkboxItems = checkboxContainer.getElementsByClassName('checkbox-item');
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
 
-        // Função para filtrar os checkboxes
         searchInput.addEventListener('keyup', function() {
             const filter = searchInput.value.toLowerCase();
             for (let i = 0; i < checkboxItems.length; i++) {
@@ -108,6 +149,20 @@
                     checkboxItems[i].style.display = 'none'; // Oculta o item
                 }
             }
+        });
+
+        selectAllBtn.addEventListener('click', function() {
+            const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = true;
+            });
+        });
+
+        deselectAllBtn.addEventListener('click', function() {
+            const checkboxes = checkboxContainer.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach(function(checkbox) {
+                checkbox.checked = false;
+            });
         });
     </script>
 </body>

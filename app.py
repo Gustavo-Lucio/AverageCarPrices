@@ -314,12 +314,13 @@ def train_model(filename):
     if not os.path.exists(filepath):
         return f"Erro: Arquivo {filename} não encontrado.", 404
     
-    df, label_encoders = clean_data(filepath)
-
-    # Transformação das colunas categóricas para numéricas, incluindo 'model'
-    if 'model' in df.columns:
+    # Carregar e processar os dados
+    df = pd.read_csv(filepath)
+    label_encoders = {}
+    for col in df.select_dtypes(include=['object']).columns:
         le = LabelEncoder()
-        df['model'] = le.fit_transform(df['model'])
+        df[col] = le.fit_transform(df[col].astype(str))
+        label_encoders[col] = le
 
     if request.method == 'POST':
         try:
@@ -354,6 +355,9 @@ def train_model(filename):
             plt.ylabel("Previsão")
             plt.grid(True)
             plt.legend()
+            
+            # Salvar gráfico no diretório static
+            os.makedirs("static", exist_ok=True)
             performance_plot_path = os.path.join("static", "model_performance.png")
             plt.savefig(performance_plot_path)
             plt.close()
@@ -366,13 +370,14 @@ def train_model(filename):
                 "train_model.html",
                 score=score,
                 filename=filename,
-                performance_plot_path=performance_plot_path,
+                performance_plot_path="model_performance.png",
                 columns=df.columns
             )
         except Exception as e:
             return f"Erro ao treinar o modelo: {e}", 500
 
     return render_template("train_model.html", columns=df.columns, filename=filename, score=None)
+
 
 @app.route("/predict/<filename>", methods=['GET', 'POST'])
 def make_prediction(filename):
