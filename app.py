@@ -6,9 +6,11 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
+from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import mean_squared_error
 import plotly.express as px
 import plotly.graph_objects as go
 import joblib
@@ -269,7 +271,123 @@ def visualize_graphs_interactive(filename):
         price_trend_fig=price_trend_fig.to_html(full_html=False)
     )
 
+def train_models(df):
+    # Inicializando o LabelEncoder
+    label_encoder = LabelEncoder()
 
+    # Converter variáveis categóricas para numéricas
+    categorical_cols = ['brand', 'model', 'fuel']  # Colunas categóricas
+    for col in categorical_cols:
+        df[col] = label_encoder.fit_transform(df[col])
+
+    # Se houver colunas de datas, convertê-las para numérico
+    if 'date' in df.columns:
+        # Convertendo a coluna 'date' para datetime no formato 'YYYY/MM'
+        df['date'] = pd.to_datetime(df['date'], format='%Y/%m')
+
+        # Calculando o número de meses desde uma data base, por exemplo, Janeiro de 2000
+        base_date = pd.Timestamp('2000-01-01')
+        df['months_since_base'] = (df['date'] - base_date) // pd.Timedelta(days=30)
+
+        # Extraindo o ano e o mês como colunas numéricas
+        df['year'] = df['date'].dt.year
+        df['month'] = df['date'].dt.month
+
+        # Remover a coluna 'date' original, pois já extraímos as informações necessárias
+        df = df.drop(columns=['date'])
+
+    # Preparando os dados para o treinamento
+    X = df.drop('avg_price_brl', axis=1)  # Features
+    y = df['avg_price_brl']  # Target
+
+    # Dividindo em treino e teste
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Modelos
+    models = {
+        "KNN": KNeighborsRegressor(n_neighbors=5),
+        "Linear Regression": LinearRegression(),
+        "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42)
+    }
+
+    trained_models = {}
+    for model_name, model in models.items():
+        model.fit(X_train, y_train)
+        trained_models[model_name] = model
+
+    # Salvar os modelos para uso posterior
+    for model_name, model in trained_models.items():
+        joblib.dump(model, f'model_{model_name}.pkl')
+
+    return trained_models
+
+
+# Função para prever o preço com base nos dados de entrada
+def predict_price(df, model_name, input_data):
+    # Carregar o modelo treinado
+    model = joblib.load(f'model_{model_name}.pkl')
+
+    # Garantir que o LabelEncoder seja usado da mesma forma que foi durante o treinamento
+    label_encoder = LabelEncoder()
+
+    # Converter as variáveis categóricas em valores numéricos, assim como no treinamento
+    categorical_cols = ['brand', 'model', 'fuel']  # As mesmas colunas categóricas usadas no treinamento
+    for col in categorical_cols:
+        input_data[col] = label_encoder.fit_transform([input_data[col]])[0]
+
+    # Converte o input_data para um DataFrame (como foi feito durante o treinamento)
+    input_data_df = pd.DataFrame([input_data])
+
+    # Predição
+    predicted_price = model.predict(input_data_df)
+
+    return predicted_price[0]
+
+
+@app.route("/predict", methods=['GET', 'POST'])
+def predict():
+    if request.method == 'POST':
+        # Recebe os dados do formulário
+        brand = request.form.get('brand')
+        model = request.form.get('model')
+        fuel = request.form.get('fuel')
+        engine_size = float(request.form.get('engine_size'))
+        age_years = int(request.form.get('age_years'))  # Idade do veículo
+        date = request.form.get('date')  # Data de fabricação (ano e mês)
+
+        # Processar a data (transformando para datetime)
+        manufacture_date = pd.to_datetime(date, format='%Y-%m')
+
+        # Calculando o número de meses desde uma data base (exemplo: Janeiro de 2000)
+        base_date = pd.Timestamp('2000-01-01')
+        months_since_base = (manufacture_date - base_date) // pd.Timedelta(days=30)
+
+        # Cria o dicionário de dados para predição
+        input_data = {
+            'brand': brand,
+            'model': model,
+            'fuel': fuel,
+            'engine_size': engine_size,
+            'age_years': age_years,
+            'months_since_base': months_since_base,  # Dados numéricos da data
+            'year': manufacture_date.year,  # Ano extraído da data
+            'month': manufacture_date.month  # Mês extraído da data
+        }
+
+        # Carregar os dados limpos e treinar os modelos
+        df, _ = clean_data(
+            'C:/Users/Weskar/PycharmProjectsTrabalhoPython/pythonProject/gerenciador-de-eventos-aula-parte-02/uploads/clean_fipe_2022.csv')  # Caminho para os dados limpos
+
+        # Treinando os modelos
+        trained_models = train_models(df)
+
+        # Prever com o modelo escolhido pelo usuário
+        model_name = request.form.get('model_choice', 'Random Forest')
+        predicted_price = predict_price(df, model_name, input_data)
+
+        return render_template('prediction_result.html', predicted_price=predicted_price)
+
+    return render_template("predict_form.html")
 
 
 
@@ -377,45 +495,6 @@ def train_model(filename):
             return f"Erro ao treinar o modelo: {e}", 500
 
     return render_template("train_model.html", columns=df.columns, filename=filename, score=None)
-
-
-@app.route("/predict/<filename>", methods=['GET', 'POST'])
-def make_prediction(filename):
-    # Carregar o modelo treinado (supondo que seja o RandomForest)
-    model_path = os.path.join("models", "random_forest.joblib")
-
-    try:
-        model = joblib.load(model_path)
-    except FileNotFoundError:
-        return f"Erro: Modelo não encontrado.", 404
-
-    prediction = None
-    prediction_plot_path = None  # Variável para salvar o caminho do gráfico
-
-    if request.method == 'POST':
-        # Extrair as features fornecidas pelo usuário
-        features = []
-        for i in range(len(request.form)):
-            feature_value = request.form.get(f'feature_{i}')
-            try:
-                features.append(float(feature_value))  # Tenta converter para float
-            except ValueError:
-                features.append(0)  # Atribui 0 caso não consiga converter
-
-        # Realizar a previsão
-        prediction = model.predict([features])[0]
-
-        # Gerar gráfico de predições (Exemplo: gráfico de barras)
-        plt.figure(figsize=(10, 6))
-        sns.barplot(x=list(range(len(features))), y=features)
-        plt.title("Previsões Realizadas")
-        plt.xlabel("Índice das Features")
-        plt.ylabel("Valor das Features")
-        prediction_plot_path = os.path.join("static", "prediction_plot.png")
-        plt.savefig(prediction_plot_path)
-
-    return render_template("predictions.html", prediction=prediction, filename=filename,
-                           prediction_plot_path=prediction_plot_path, columns=model.feature_names_in_)
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)

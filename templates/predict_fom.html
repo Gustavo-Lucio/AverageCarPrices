@@ -1,0 +1,28 @@
+<form action="{{ url_for('predict') }}" method="POST">
+    <label for="brand">Marca:</label>
+    <input type="text" id="brand" name="brand" required><br><br>
+
+    <label for="model">Modelo:</label>
+    <input type="text" id="model" name="model" required><br><br>
+
+    <label for="fuel">Combustível:</label>
+    <input type="text" id="fuel" name="fuel" required><br><br>
+
+    <label for="engine_size">Tamanho do Motor (cm³):</label>
+    <input type="number" id="engine_size" name="engine_size" step="0.1" required><br><br>
+
+    <label for="age_years">Idade do Veículo (anos):</label>
+    <input type="number" id="age_years" name="age_years" required><br><br>
+
+    <label for="date">Data de Fabricação (Ano/Mês):</label>
+    <input type="month" id="date" name="date" required><br><br>
+
+    <label for="model_choice">Escolha o modelo:</label>
+    <select id="model_choice" name="model_choice">
+        <option value="Random Forest">Random Forest</option>
+        <option value="Linear Regression">Linear Regression</option>
+        <option value="KNN">KNN</option>
+    </select><br><br>
+
+    <input type="submit" value="Fazer Previsão">
+</form>
