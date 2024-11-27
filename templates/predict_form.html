@@ -1,28 +1,140 @@
-<form action="{{ url_for('predict') }}" method="POST">
-    <label for="brand">Marca:</label>
-    <input type="text" id="brand" name="brand" required><br><br>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Previsão</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-    <label for="model">Modelo:</label>
-    <input type="text" id="model" name="model" required><br><br>
+        form {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 20px 40px;
+            max-width: 400px;
+            width: 100%;
+        }
 
-    <label for="fuel">Combustível:</label>
-    <input type="text" id="fuel" name="fuel" required><br><br>
+        h1 {
+            text-align: center;
+            color: #333333;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
 
-    <label for="engine_size">Tamanho do Motor (cm³):</label>
-    <input type="number" id="engine_size" name="engine_size" step="0.1" required><br><br>
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #555555;
+        }
 
-    <label for="age_years">Idade do Veículo (anos):</label>
-    <input type="number" id="age_years" name="age_years" required><br><br>
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
 
-    <label for="date">Data de Fabricação (Ano/Mês):</label>
-    <input type="month" id="date" name="date" required><br><br>
+        input:focus, select:focus {
+            border-color: #007BFF;
+            outline: none;
+        }
 
-    <label for="model_choice">Escolha o modelo:</label>
-    <select id="model_choice" name="model_choice">
-        <option value="Random Forest">Random Forest</option>
-        <option value="Linear Regression">Linear Regression</option>
-        <option value="KNN">KNN</option>
-    </select><br><br>
+        input[type="submit"] {
+            background-color: #007BFF;
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
 
-    <input type="submit" value="Fazer Previsão">
-</form>
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+
+        input[type="submit"]:active {
+            background-color: #004494;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-footer {
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            form {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <form action="{{ url_for('predict') }}" method="POST">
+        <h1>Previsão de Preço</h1>
+        
+        <div class="form-group">
+            <label for="brand">Marca:</label>
+            <input type="text" id="brand" name="brand" required>
+        </div>
+
+        <div class="form-group">
+            <label for="model">Modelo:</label>
+            <input type="text" id="model" name="model" required>
+        </div>
+
+        <div class="form-group">
+            <label for="fuel">Combustível:</label>
+            <input type="text" id="fuel" name="fuel" required>
+        </div>
+
+        <div class="form-group">
+            <label for="engine_size">Tamanho do Motor (cm³):</label>
+            <input type="number" id="engine_size" name="engine_size" step="0.1" required>
+        </div>
+
+        <div class="form-group">
+            <label for="age_years">Idade do Veículo (anos):</label>
+            <input type="number" id="age_years" name="age_years" required>
+        </div>
+
+        <div class="form-group">
+            <label for="date">Data de Fabricação (Ano/Mês):</label>
+            <input type="month" id="date" name="date" required>
+        </div>
+
+        <div class="form-group">
+            <label for="model_choice">Escolha o modelo:</label>
+            <select id="model_choice" name="model_choice">
+                <option value="Random Forest">Random Forest</option>
+                <option value="Linear Regression">Linear Regression</option>
+                <option value="KNN">KNN</option>
+            </select>
+        </div>
+
+        <div class="form-footer">
+            <input type="submit" value="Fazer Previsão">
+        </div>
+    </form>
+</body>
+</html>

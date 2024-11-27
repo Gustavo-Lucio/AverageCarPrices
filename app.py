@@ -504,10 +504,10 @@ def predict():
         }
 
         # Carregar os dados limpos e treinar os modelos
-        df, _ = clean_data(
-            'C:/Users/Weskar/PycharmProjectsTrabalhoPython/pythonProject/gerenciador-de-eventos-aula-parte-02/uploads/clean_fipe_2022.csv')  # Caminho para os dados limpos
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'clean_fipe_2022.csv')
+        df, _ = clean_data(filepath)
 
-        # Treinando os modelos
+
         trained_models = train_models(df)
 
         # Prever com o modelo escolhido pelo usuário
@@ -517,12 +517,6 @@ def predict():
         return render_template('prediction_result.html', predicted_price=predicted_price)
 
     return render_template("predict_form.html")
-
-
-
-
-
-
 
 @app.route("/select_car_model/<filename>", methods=['GET', 'POST'])
 def select_car_model(filename):
