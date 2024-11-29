@@ -1,16 +1,16 @@
 import os
+import matplotlib
 import pandas as pd
 import numpy as np
 from flask import Flask, render_template, request, redirect, url_for
+matplotlib.use('Agg')  # Isso evita o uso do backend do Tkinter
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import mean_squared_error
 import plotly.express as px
 import plotly.graph_objects as go
 import plotly.subplots as sp
@@ -70,17 +70,24 @@ def clean_data(filepath):
     print("Depois da limpeza:")
     print(df.isna().sum())  # Verificar novamente os valores NaN
 
-    # Aplicar Label Encoding somente em colunas categóricas (não em 'date' 'fuel' 'brand')
+    # Copiar a versão original para uso nas visualizações
+    df_original = df.copy()
+
+    # Aplicar Label Encoding somente em colunas categóricas para o modelo (não em 'date', 'fuel', 'brand')
     categorical_columns = df.select_dtypes(include=['object']).columns
     categorical_columns = categorical_columns[
-        (categorical_columns != 'date') &
-        (categorical_columns != 'fuel') &
-        (categorical_columns != 'brand')]
-    # Excluir 'date' 'fuel' 'brand'
+        (categorical_columns != 'date') & (categorical_columns != 'fuel') & (categorical_columns != 'brand') & (categorical_columns != 'model')]
 
-    df, label_encoders = apply_label_encoding(df, categorical_columns)
+    # Criar um Label Encoder para cada coluna categórica
+    label_encoders = {}
+    for col in categorical_columns:
+        le = LabelEncoder()
+        df[col] = le.fit_transform(df[col].astype(str))  # Substituir valores de string por números
+        label_encoders[col] = le
 
-    return df, label_encoders
+    # Retornar tanto o dataframe codificado quanto o original para visualização
+    return df, df_original, label_encoders
+
 
 
 @app.route("/", methods=['GET', 'POST'])
@@ -92,7 +99,7 @@ def upload_file():
             file.save(filepath)
             
             # Limpeza e preparação dos dados
-            df, _ = clean_data(filepath)
+            df, df_original, label_encoders = clean_data(filepath)
 
             # Verificar se o arquivo já contém 'clean_' e evitar duplicação
             filename = file.filename
@@ -111,22 +118,9 @@ def visualize_data(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     df = pd.read_csv(filepath)
 
-    # Exibe uma pré-visualização dos dados
     df_html = df.head().to_html(classes='table table-striped')
 
-    # Gerar gráfico de distribuição de preços
-    plot_path = None
-    if 'avg_price_brl' in df.columns:
-        plt.figure(figsize=(10, 6))
-        sns.histplot(df['avg_price_brl'], bins=30, kde=True)
-        plt.title("Distribuição de Preços Médios de Carros")
-        plt.xlabel("Preço Médio (BRL)")
-        plt.ylabel("Frequência")
-        plot_path = os.path.join("static", "plot.png")
-        plt.savefig(plot_path)
-        plt.close()  # Fecha o gráfico após salvar
-
-    return render_template("visualize.html", data=df_html, filename=filename, plot_path=plot_path)
+    return render_template("visualize.html", data=df_html, filename=filename)
 
 @app.route("/visualize_graphs_static/<filename>")
 def visualize_graphs_static(filename):
@@ -399,135 +393,20 @@ def visualize_graphs_interactive(filename):
         fig_comparacao_combustivel=fig_comparacao_combustivel.to_html(full_html=False)
     )
 
-
-def train_models(df):
-    # Inicializando o LabelEncoder
-    label_encoder = LabelEncoder()
-
-    # Converter variáveis categóricas para numéricas
-    categorical_cols = ['brand', 'model', 'fuel']  # Colunas categóricas
-    for col in categorical_cols:
-        df[col] = label_encoder.fit_transform(df[col])
-
-    # Se houver colunas de datas, convertê-las para numérico
-    if 'date' in df.columns:
-        # Convertendo a coluna 'date' para datetime no formato 'YYYY/MM'
-        df['date'] = pd.to_datetime(df['date'], format='%Y/%m')
-
-        # Calculando o número de meses desde uma data base, por exemplo, Janeiro de 2000
-        base_date = pd.Timestamp('2000-01-01')
-        df['months_since_base'] = (df['date'] - base_date) // pd.Timedelta(days=30)
-
-        # Extraindo o ano e o mês como colunas numéricas
-        df['year'] = df['date'].dt.year
-        df['month'] = df['date'].dt.month
-
-        # Remover a coluna 'date' original, pois já extraímos as informações necessárias
-        df = df.drop(columns=['date'])
-
-    # Preparando os dados para o treinamento
-    X = df.drop('avg_price_brl', axis=1)  # Features
-    y = df['avg_price_brl']  # Target
-
-    # Dividindo em treino e teste
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-    # Modelos
-    models = {
-        "KNN": KNeighborsRegressor(n_neighbors=5),
-        "Linear Regression": LinearRegression(),
-        "Random Forest": RandomForestRegressor(n_estimators=100, random_state=42)
-    }
-
-    trained_models = {}
-    for model_name, model in models.items():
-        model.fit(X_train, y_train)
-        trained_models[model_name] = model
-
-    # Salvar os modelos para uso posterior
-    for model_name, model in trained_models.items():
-        joblib.dump(model, f'model_{model_name}.pkl')
-
-    return trained_models
-
-
-# Função para prever o preço com base nos dados de entrada
-def predict_price(df, model_name, input_data):
-    # Carregar o modelo treinado
-    model = joblib.load(f'model_{model_name}.pkl')
-
-    # Garantir que o LabelEncoder seja usado da mesma forma que foi durante o treinamento
-    label_encoder = LabelEncoder()
-
-    # Converter as variáveis categóricas em valores numéricos, assim como no treinamento
-    categorical_cols = ['brand', 'model', 'fuel']  # As mesmas colunas categóricas usadas no treinamento
-    for col in categorical_cols:
-        input_data[col] = label_encoder.fit_transform([input_data[col]])[0]
-
-    # Converte o input_data para um DataFrame (como foi feito durante o treinamento)
-    input_data_df = pd.DataFrame([input_data])
-
-    # Predição
-    predicted_price = model.predict(input_data_df)
-
-    return predicted_price[0]
-
-
-@app.route("/predict", methods=['GET', 'POST'])
-def predict():
-    if request.method == 'POST':
-        # Recebe os dados do formulário
-        brand = request.form.get('brand')
-        model = request.form.get('model')
-        fuel = request.form.get('fuel')
-        engine_size = float(request.form.get('engine_size'))
-        age_years = int(request.form.get('age_years'))  # Idade do veículo
-        date = request.form.get('date')  # Data de fabricação (ano e mês)
-
-        # Processar a data (transformando para datetime)
-        manufacture_date = pd.to_datetime(date, format='%Y-%m')
-
-        # Calculando o número de meses desde uma data base (exemplo: Janeiro de 2000)
-        base_date = pd.Timestamp('2000-01-01')
-        months_since_base = (manufacture_date - base_date) // pd.Timedelta(days=30)
-
-        # Cria o dicionário de dados para predição
-        input_data = {
-            'brand': brand,
-            'model': model,
-            'fuel': fuel,
-            'engine_size': engine_size,
-            'age_years': age_years,
-            'months_since_base': months_since_base,  # Dados numéricos da data
-            'year': manufacture_date.year,  # Ano extraído da data
-            'month': manufacture_date.month  # Mês extraído da data
-        }
-
-        # Carregar os dados limpos e treinar os modelos
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], 'clean_fipe_2022.csv')
-        df, _ = clean_data(filepath)
-
-
-        trained_models = train_models(df)
-
-        # Prever com o modelo escolhido pelo usuário
-        model_name = request.form.get('model_choice', 'Random Forest')
-        predicted_price = predict_price(df, model_name, input_data)
-
-        return render_template('prediction_result.html', predicted_price=predicted_price)
-
-    return render_template("predict_form.html")
-
 @app.route("/select_car_model/<filename>", methods=['GET', 'POST'])
 def select_car_model(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    
+
     # Limpeza do dataset
-    df, _ = clean_data(filepath)
+    df, df_original, label_encoders = clean_data(filepath)
 
     # Verifica se a coluna 'model' existe
     if 'model' not in df.columns:
         return "Erro: Coluna 'model' não encontrada no dataset.", 400
+
+    # Aplica Label Encoding para 'brand', 'fuel', 'date' e 'model' (convertendo para valores numéricos)
+    categorical_columns = ['brand', 'fuel', 'date', 'model']
+    df, label_encoders = apply_label_encoding(df, categorical_columns)
 
     # Obtém os modelos únicos
     car_models = df['model'].unique()
@@ -540,7 +419,7 @@ def select_car_model(filename):
         # Filtra os dados pelos modelos selecionados
         filtered_df = df[df['model'].isin(selected_models)]
 
-        # Salva o dataset filtrado
+        # Salva o dataset filtrado com as colunas convertidas para numéricas
         filtered_filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"filtered_{filename}")
         filtered_df.to_csv(filtered_filepath, index=False)
 
@@ -548,13 +427,14 @@ def select_car_model(filename):
 
     return render_template("select_car_model.html", car_models=car_models, filename=filename)
 
+
 @app.route("/train/<filename>", methods=['GET', 'POST'])
 def train_model(filename):
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-    
+
     if not os.path.exists(filepath):
         return f"Erro: Arquivo {filename} não encontrado.", 404
-    
+
     # Carregar e processar os dados
     df = pd.read_csv(filepath)
     label_encoders = {}
@@ -567,10 +447,10 @@ def train_model(filename):
         try:
             target = request.form['target']
             features = request.form.getlist('features')
-            
+
             if target not in df.columns or not set(features).issubset(df.columns):
                 return "Erro: Coluna alvo ou features inválidas.", 400
-            
+
             X = df[features]
             y = df[target]
 
@@ -596,7 +476,7 @@ def train_model(filename):
             plt.ylabel("Previsão")
             plt.grid(True)
             plt.legend()
-            
+
             # Salvar gráfico no diretório static
             os.makedirs("static", exist_ok=True)
             performance_plot_path = os.path.join("static", "model_performance.png")
@@ -618,6 +498,7 @@ def train_model(filename):
             return f"Erro ao treinar o modelo: {e}", 500
 
     return render_template("train_model.html", columns=df.columns, filename=filename, score=None)
+
 
 if __name__ == "__main__":
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
