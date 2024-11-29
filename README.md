@@ -97,11 +97,6 @@ Este projeto é um aplicativo web baseado em Flask, projetado para preprocessame
 ```plaintext
 ├── app.py                 # Aplicação principal do Flask
 ├── templates/             # Templates HTML para as páginas web
-│   ├── index.html         # Página de upload
-│   ├── visualize.html     # Página de visualização de dados
-│   ├── train_model.html   # Página de treinamento de modelo
-│   ├── predictions.html   # Página de previsões
-│   ├── select_car_model.html  # Página de seleção de modelos de carro
 ├── uploads/               # Pasta para os arquivos CSV enviados
 ├── models/                # Pasta para salvar modelos treinados
 ├── static/                # Pasta para gráficos gerados e arquivos estáticos
